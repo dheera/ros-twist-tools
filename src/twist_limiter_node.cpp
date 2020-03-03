@@ -34,9 +34,9 @@ TwistMultiplier::TwistMultiplier(ros::NodeHandle &_nh, ros::NodeHandle &_nh_priv
   nh(_nh), nh_priv(_nh_priv) {
     ROS_INFO("initializing");
 
-    nh_priv.param("topic_twist_input", param_topic_twist_input, (std::string)"/cmd_vel/managed");
-    nh_priv.param("topic_twist_output", param_topic_twist_output, (std::string)"/cmd_vel/output");
-    nh_priv.param("topic_multiplier", param_topic_multiplier, (std::string)"/cmd_vel/multiplier");
+    nh_priv.param("topic_twist_input", param_topic_twist_input, (std::string)"/cmd_vel/managed_unsafe");
+    nh_priv.param("topic_twist_output", param_topic_twist_output, (std::string)"/cmd_vel/managed");
+    nh_priv.param("topic_twist_output", param_topic_multiplier, (std::string)"/cmd_vel/multiplier");
 
   pub_twist_output = nh.advertise<geometry_msgs::Twist>(param_topic_twist_output, 1);
   sub_twist_input = nh.subscribe<geometry_msgs::Twist>(param_topic_twist_input, 1, &TwistMultiplier::on_twist_input, this);
