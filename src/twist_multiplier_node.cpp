@@ -48,7 +48,7 @@ void TwistMultiplier::on_twist_input(const geometry_msgs::Twist::ConstPtr& msg) 
 
   geometry_msgs::Twist msg_output;
   msg_output.linear.x = last_twist.linear.x * last_multiplier.data;
-  msg_output.angular.z = last_twist.angular.z * last_multiplier.data;
+  msg_output.angular.z = last_twist.angular.z; // * last_multiplier.data;
 
   ROS_INFO_STREAM("twist = " << last_twist.linear.x << " " << last_twist.linear.z);
   pub_twist_output.publish(msg_output);
