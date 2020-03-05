@@ -23,10 +23,13 @@ class TwistMultiplier {
     std_msgs::Float32 last_speed_limit;
     uint64_t last_speed_limit_time; // in ms
 
-    std::string param_topic_cmd_vel_in;
-    std::string param_topic_cmd_vel_out;
+    geometry_msgs::Twist msg_output_final;
+
+    std::string param_topic_in;
+    std::string param_topic_out;
     std::string param_topic_speed_limit;
     bool param_scale_angular;
+    double param_smoothing;
     int param_timeout;
 
     ros::Publisher pub_cmd_vel_out;
@@ -38,14 +41,15 @@ TwistMultiplier::TwistMultiplier(ros::NodeHandle &_nh, ros::NodeHandle &_nh_priv
   nh(_nh), nh_priv(_nh_priv) {
     ROS_INFO("initializing");
 
-    nh_priv.param("topic_cmd_vel_in", param_topic_cmd_vel_in, (std::string)"cmd_vel_in");
-    nh_priv.param("topic_cmd_vel_out", param_topic_cmd_vel_out, (std::string)"cmd_vel_out");
+    nh_priv.param("topic_in", param_topic_in, (std::string)"cmd_vel_in");
+    nh_priv.param("topic_out", param_topic_out, (std::string)"cmd_vel_out");
     nh_priv.param("topic_speed_limit", param_topic_speed_limit, (std::string)"speed_limit");
     nh_priv.param("scale_angular", param_scale_angular, (bool)true);
+    nh_priv.param("smoothing", param_smoothing, (double)0.0);
     nh_priv.param("timeout", param_timeout, (int)200); // if speed_limit is not received in [timeout] ms, spit out 0s
 
-  pub_cmd_vel_out = nh.advertise<geometry_msgs::Twist>(param_topic_cmd_vel_out, 1);
-  sub_cmd_vel_in = nh.subscribe<geometry_msgs::Twist>(param_topic_cmd_vel_in, 1, &TwistMultiplier::on_cmd_vel_in, this);
+  pub_cmd_vel_out = nh.advertise<geometry_msgs::Twist>(param_topic_out, 1);
+  sub_cmd_vel_in = nh.subscribe<geometry_msgs::Twist>(param_topic_in, 1, &TwistMultiplier::on_cmd_vel_in, this);
   sub_speed_limit = nh.subscribe<std_msgs::Float32>(param_topic_speed_limit, 1, &TwistMultiplier::on_speed_limit, this);
 }
 
@@ -86,7 +90,20 @@ void TwistMultiplier::on_cmd_vel_in(const geometry_msgs::Twist::ConstPtr& msg) {
     msg_output.angular.z = 0.;
   }
 
-  pub_cmd_vel_out.publish(msg_output);
+  msg_output_final.linear.x = param_smoothing * msg_output_final.linear.x + (1 - param_smoothing) * msg_output.linear.x;
+  msg_output_final.linear.y = param_smoothing * msg_output_final.linear.y + (1 - param_smoothing) * msg_output.linear.y;
+  msg_output_final.linear.z = param_smoothing * msg_output_final.linear.z + (1 - param_smoothing) * msg_output.linear.z;
+  msg_output_final.angular.x = param_smoothing * msg_output_final.angular.x + (1 - param_smoothing) * msg_output.angular.x;
+  msg_output_final.angular.y = param_smoothing * msg_output_final.angular.y + (1 - param_smoothing) * msg_output.angular.y;
+  msg_output_final.angular.z = param_smoothing * msg_output_final.angular.z + (1 - param_smoothing) * msg_output.angular.z;
+  if(std::abs(msg_output_final.linear.x) < 1e-3) msg_output_final.linear.x = 0;
+  if(std::abs(msg_output_final.linear.y) < 1e-3) msg_output_final.linear.y = 0;
+  if(std::abs(msg_output_final.linear.z) < 1e-3) msg_output_final.linear.z = 0;
+  if(std::abs(msg_output_final.angular.x) < 1e-3) msg_output_final.angular.x = 0;
+  if(std::abs(msg_output_final.angular.y) < 1e-3) msg_output_final.angular.y = 0;
+  if(std::abs(msg_output_final.angular.z) < 1e-3) msg_output_final.angular.z = 0;
+
+  pub_cmd_vel_out.publish(msg_output_final);
 }
 
 void TwistMultiplier::on_speed_limit(const std_msgs::Float32::ConstPtr& msg) {

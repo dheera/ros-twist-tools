@@ -22,8 +22,8 @@ class TwistMultiplier {
     std_msgs::Float32 last_multiplier;
     uint64_t last_multiplier_time; // in ms
 
-    std::string param_topic_cmd_vel_in;
-    std::string param_topic_cmd_vel_out;
+    std::string param_topic_in;
+    std::string param_topic_out;
     std::string param_topic_multiplier;
     bool param_multiply_linear;
     bool param_multiply_angular;
@@ -38,15 +38,15 @@ TwistMultiplier::TwistMultiplier(ros::NodeHandle &_nh, ros::NodeHandle &_nh_priv
   nh(_nh), nh_priv(_nh_priv) {
     ROS_INFO("initializing");
 
-    nh_priv.param("topic_cmd_vel_in", param_topic_cmd_vel_in, (std::string)"cmd_vel_in");
-    nh_priv.param("topic_cmd_vel_out", param_topic_cmd_vel_out, (std::string)"cmd_vel_out");
+    nh_priv.param("topic_in", param_topic_in, (std::string)"cmd_vel_in");
+    nh_priv.param("topic_out", param_topic_out, (std::string)"cmd_vel_out");
     nh_priv.param("topic_multiplier", param_topic_multiplier, (std::string)"multiplier");
     nh_priv.param("multiply_linear", param_multiply_linear, (bool)true);
     nh_priv.param("multiply_angular", param_multiply_angular, (bool)true);
     nh_priv.param("timeout", param_timeout, (int)200); // if multiplier is not received in [timeout] ms, spit out 0s
 
-  pub_cmd_vel_out = nh.advertise<geometry_msgs::Twist>(param_topic_cmd_vel_out, 1);
-  sub_cmd_vel_in = nh.subscribe<geometry_msgs::Twist>(param_topic_cmd_vel_in, 1, &TwistMultiplier::on_cmd_vel_in, this);
+  pub_cmd_vel_out = nh.advertise<geometry_msgs::Twist>(param_topic_out, 1);
+  sub_cmd_vel_in = nh.subscribe<geometry_msgs::Twist>(param_topic_in, 1, &TwistMultiplier::on_cmd_vel_in, this);
   sub_multiplier = nh.subscribe<std_msgs::Float32>(param_topic_multiplier, 1, &TwistMultiplier::on_multiplier, this);
 }
 
